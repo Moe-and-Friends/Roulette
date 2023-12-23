@@ -1,10 +1,4 @@
-# This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
 import random
-import os
 import sys
 
 import intervals
@@ -36,6 +30,7 @@ intents = Intents.default()
 intents.message_content = True  # Enable sending messages
 intents.members = True
 bot = Bot("nana", intents=intents)
+
 
 @tasks.loop(minutes=1.0)
 async def batch_unmute_users():
@@ -145,9 +140,10 @@ async def on_message(message: Message):
     # Note: The Channel IDs should already be ints, but cast just to be safe.
     observing_channel_ids = [int(channel_id) for channel_id in guild_settings.get("channels", list())]
     if not observing_channel_ids:
-        Ayumi.critical("There do not appear any channels being observed for guild {guild_name} ({guild_id}), will not continue.".format(
-            guild_name=message.guild.name,
-            guild_id=message.guild.id))
+        Ayumi.critical(
+            "There do not appear any channels being observed for guild {guild_name} ({guild_id}), will not continue.".format(
+                guild_name=message.guild.name,
+                guild_id=message.guild.id))
     Ayumi.debug("Loaded Channel IDs to observe: {channel_ids}".format(
         channel_ids=", ".join([str(channel_id) for channel_id in observing_channel_ids])))
     if message.channel.id not in observing_channel_ids:
@@ -242,12 +238,13 @@ async def on_message(message: Message):
     Ayumi.debug("Loaded role ({role_name}, {role_id}).".format(role_name=role_to_add.name, role_id=role_to_add.id))
 
     await message.author.add_roles(role_to_add, atomic=True)
-    Ayumi.info("Muted user ({user_name}, {user_display_name}) with role ({role_name}, {role_id}) until {unmute_time}.".format(
-        user_name=message.author.name,
-        user_display_name=message.author.display_name,
-        role_name=role_to_add.name,
-        role_id=role_to_add.id,
-        unmute_time=unmute_time.strftime("[UTC] %c")))
+    Ayumi.info(
+        "Muted user ({user_name}, {user_display_name}) with role ({role_name}, {role_id}) until {unmute_time}.".format(
+            user_name=message.author.name,
+            user_display_name=message.author.display_name,
+            role_name=role_to_add.name,
+            role_id=role_to_add.id,
+            unmute_time=unmute_time.strftime("[UTC] %c")))
 
     mute_messages = guild_settings.get("mute_messages", [DEFAULT_MUTE_MESSAGE])
     mute_message_to_use = random.choice(mute_messages)
@@ -262,7 +259,7 @@ async def on_message(message: Message):
 
 
 def main():
-    bot.run(token=os.getenv("DISCORD_BOT_TOKEN"))
+    bot.run(token=settings.get("bot_token"))
 
 
 # Press the green button in the gutter to run the script.
