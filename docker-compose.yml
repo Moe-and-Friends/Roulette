@@ -1,0 +1,17 @@
+version: "3.1"
+services:
+  roulette:
+    build:
+      context: ./
+    env_file: .env
+    hostname: roulette 
+    logging:
+      options:
+        max-size: "1m"
+        max-file: 1
+    restart: unless-stopped
+    volumes:
+      - ./config/settings.toml:/roulette/config/settings.toml:ro # Readonly
+      - ./config/settings.local.toml:/roulette/config/settings.local.toml:ro # Readonly
+      - ./config/.secrets.toml:/roulette/config/.secrets.toml:ro # Readonly
+      - ./config/.secrets.local.toml:/roulette/config/.secrets.local.toml:ro # Readonly
