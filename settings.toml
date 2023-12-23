@@ -1,0 +1,34 @@
+[default.guilds."<guild_id_here>"]
+
+# Channels that should be observed.
+channels = ["<list_of_channel_ids_as_int>"]
+
+# The role that should be given to users to mute them
+mute_role = "<mute_role_id_as_int>"
+
+# Roles that should not be subject to a mute event.
+safe_roles = ["<list_of_role_ids_as_int>"]
+
+# Words, that if detected within a message, will trigger the Roulette
+triggers = ["<list_of_words>"] # Words will be searched for in the message content.
+
+# Supported Tags:
+# {muted_user_name}
+# {mute_duration_display_str}
+# These messages are randomly selected by the bot to respond.
+mute_messages = ["<list_of_messages>"]
+
+# Supported Tags:
+# {safe_user_name}
+# {mute_duration_display_str}
+# These messages are randomly selected by the bot to respond.
+safe_messages = ["<list_of_messages>"]
+
+# List of Mute intervals
+# Bounds are inclusive (bound.lower, bound.upper)
+# Weight: Non-cumulative weight for each interval.
+# Supported suffixes: m, h, d, w
+# Repeat another [[<STAGE>.intervals]] to add a new interval.
+[[default.intervals]]
+bound = { "lower" = "1m", "upper" = "5m"}
+weight = 100
