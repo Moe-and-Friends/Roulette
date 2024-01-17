@@ -1,5 +1,7 @@
 
 bot_token = "<bot_token>"
+bot_shard_id = 0
+bot_shard_count = 1
 
 [default.guilds."<guild_id_here>"]
 

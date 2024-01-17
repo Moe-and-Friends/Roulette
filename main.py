@@ -18,7 +18,9 @@ intents = Intents.default()
 intents.message_content = True  # Enable sending messages
 intents.members = True
 bot = Bot("nana", intents=intents)
-
+# Optionally load the bot sharded, to support zero downtime.
+bot.shard_id = settings.get("bot_shard_id", None)
+bot.shard_count = settings.get("bot_shard_token", None)
 
 @bot.event
 async def on_ready():
