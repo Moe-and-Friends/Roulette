@@ -4,6 +4,7 @@ from dynaconf import Dynaconf
 settings = Dynaconf(
     envvar_prefix="ROULETTE",
     environments=True,
+    load_dotenv=True,
     settings_files=[
         'settings.toml',
         '.secrets.toml',
