@@ -29,7 +29,7 @@ mute_messages_self = ["<list_of_messages>"]
 # {muted_user_name}
 # {mute_duration_display_str}
 # These messages are randomly selected by the bot to respond if the user is rolling for others.
-muted_messages_other = ["<list_of_message>"]
+mute_messages_other = ["<list_of_message>"]
 
 # Supported Tags:
 # {safe_user_name}
