@@ -11,8 +11,11 @@ from discord.ext.commands import Bot
 
 # TODO: Add support for Cogs/Extensions
 
-DEFAULT_SAFE_MESSAGE = "You have a safe role, so you won't be muted :)"
-DEFAULT_MUTE_MESSAGE = "Oh no, you've been muted for {mute_duration_display_str}!"
+DEFAULT_SAFE_MESSAGE_SELF = "You have a safe role, so you won't be muted :)"
+DEFAULT_SAFE_MESSAGE_OTHER = "{safe_user_name} has a safe role, so they won't be muted :)"
+DEFAULT_MUTE_MESSAGE_SELF = "Oh no, you've been muted for {mute_duration_display_str}!"
+DEFAULT_MUTE_MESSAGE_OTHER = "Oh no, {muted_user_name} has been muted for {mute_duration_display_str}!"
+DEFAULT_ADMIN_NO_ROLES_MESSAGE = "You do not have sufficient permissions to run this command."
 
 intents = Intents.default()
 intents.message_content = True  # Enable sending messages
@@ -21,6 +24,7 @@ bot = Bot("nana", intents=intents)
 # Optionally load the bot sharded, to support zero downtime.
 bot.shard_id = settings.get("bot_shard_id", None)
 bot.shard_count = settings.get("bot_shard_count", None)
+
 
 @bot.event
 async def on_ready():
@@ -107,14 +111,26 @@ async def on_message(message: Message):
                 author_display_name=message.author.display_name,
                 message_content=message.content[:10]))
 
-    mute_duration = intervals.generate_mute_time()  # Mute duration is in minutes (as int)
-    mute_duration_display_str = intervals.convert_minutes_to_display_str(mute_duration)
-    Ayumi.info(
-        "Generated mute time: {mute_time} ({mute_time_in_minutes} minutes).".format(
-            mute_time=mute_duration_display_str,
-            mute_time_in_minutes=mute_duration))
+    admin_roles = guild_settings.get("admin_roles", list())
+    if admin_roles:
+        Ayumi.debug("Loaded admin role IDs: {ids}".format(ids=", ".join([str(role) for role in admin_roles])))
+    else:
+        Ayumi.warning("No admin role IDs were loaded.")
 
-    # If the message author is a safe role, then do not mute them.
+    # When message content contains mentions of other users, this is interpreted as a request to execute the gacha
+    # on all mentions' behalf. This requires administrator-level privileges.
+    if message.mentions and set([role.id for role in message.author.roles]).isdisjoint(admin_roles):
+        Ayumi.info("Message contains tags of other users, but user does not have an admin role, ignoring.")
+        admin_no_role_messages = guild_settings.get("admin_no_role_messages", [DEFAULT_ADMIN_NO_ROLES_MESSAGE])
+        admin_no_role_message_to_use = random.choice(admin_no_role_messages)
+        await message.reply(
+            admin_no_role_message_to_use.format(
+                author_name=message.author.name
+            )
+        )
+        return
+
+    # Preload safe roles for future processing. If the message author is a safe role, then do not mute them.
     # However, they should still be informed of their theoretical mute duration.
     safe_roles = guild_settings.get("safe_roles", list())
     if safe_roles:
@@ -122,49 +138,74 @@ async def on_message(message: Message):
     else:
         Ayumi.warning("No safe role IDs were loaded.")
 
-    # TODO: Log which role on the author is safe.
-    if not set([role.id for role in message.author.roles]).isdisjoint(safe_roles):
-        Ayumi.info("Message {message_id} from user {author_name} has a safe role, ignoring.".format(
-            message_id=message.id,
-            author_name=message.author.name))
+    # Admin roles are implicitly also safe roles, so include them in the list.
+    safe_roles.extend(admin_roles)
+    Ayumi.debug("Extended safe roles to include admin role IDs: {ids}".format(
+        ids=", ".join([str(role) for role in admin_roles])))
 
-        safe_messages = guild_settings.get("safe_messages", [DEFAULT_SAFE_MESSAGE])
-        safe_message_to_use = random.choice(safe_messages)
-        await message.reply(
-            safe_message_to_use.format(
-                safe_user_name=message.author.display_name,
+    # Select the intended action target for this message.
+    # If author has mentioned other users, they are the target. Otherwise, the target defaults to the author.
+    # Note: `dict.fromkeys()` is used to remove duplicate tags.
+    target_users = list(dict.fromkeys(message.mentions or [message.author]))
+    target_users = target_users[:5]  # Trim to only support up to 5 tags at most currently.
+
+    # Start processing an action for each target_user (either the message author, or all tagged in the message).
+    for target_user in target_users:
+        mute_duration = intervals.generate_mute_time()  # Mute duration is in minutes (as int)
+        mute_duration_display_str = intervals.convert_minutes_to_display_str(mute_duration)
+        Ayumi.info(
+            "Generated mute time: {mute_time} ({mute_time_in_minutes} minutes).".format(
+                mute_time=mute_duration_display_str,
+                mute_time_in_minutes=mute_duration))
+
+        target_is_self = (target_user == message.author)
+        Ayumi.debug(f"Target for mute is self: {target_is_self}")
+
+        # TODO: Log which role on the author is safe.
+        if not set([role.id for role in target_user.roles]).isdisjoint(safe_roles):
+            Ayumi.info("Message {message_id} for user {author_name} has a safe role, ignoring.".format(
+                message_id=message.id,
+                author_name=target_user.name))
+
+            safe_messages = guild_settings.get("safe_messages_self", [DEFAULT_SAFE_MESSAGE_SELF]) \
+                if target_is_self else guild_settings.get("safe_messages_other", [DEFAULT_SAFE_MESSAGE_OTHER])
+            safe_message_to_use = random.choice(safe_messages)
+            await message.reply(safe_message_to_use.format(
+                safe_user_name=target_user.display_name,
                 mute_duration_display_str=mute_duration_display_str))
-        return
+            continue
 
-    # Calculate the time that the user will be unblocked.
-    current_time = datetime.now(timezone.utc)  # UTC time
-    Ayumi.debug("The current time is: {current_time}".format(current_time=current_time.strftime("[UTC] %c")))
+        # Calculate the time that the user will be unblocked.
+        current_time = datetime.now(timezone.utc)  # UTC time
+        Ayumi.debug("The current time is: {current_time}".format(current_time=current_time.strftime("[UTC] %c")))
 
-    mute_duration_as_delta = timedelta(minutes=mute_duration)
+        mute_duration_as_delta = timedelta(minutes=mute_duration)
 
-    # TODO: Temporary block due to the Discord timeout being limited to 28 days.
-    if mute_duration_as_delta > timedelta(days=28):
-        mute_duration_as_delta = timedelta(days=28)
-        Ayumi.warning("WARNING: Generated a mute time above 28 days, trimming to 28 days. Check your configuration!")
+        # TODO: Temporary block due to the Discord timeout being limited to 28 days.
+        if mute_duration_as_delta > timedelta(days=28):
+            mute_duration_as_delta = timedelta(days=28)
+            Ayumi.warning(
+                "WARNING: Generated a mute time above 28 days, trimming to 28 days. Check your configuration!")
 
-    unmute_time = current_time + mute_duration_as_delta
-    Ayumi.debug("The user will be unmuted at: {unmute_time}".format(unmute_time=unmute_time.strftime("[UTC] %c")))
+        unmute_time = current_time + mute_duration_as_delta
+        Ayumi.debug("The user will be unmuted at: {unmute_time}".format(unmute_time=unmute_time.strftime("[UTC] %c")))
 
-    await message.author.timeout(mute_duration_as_delta, reason="Timed out via Gacha for {duration}.".format(
-        duration=mute_duration_display_str))
-    Ayumi.info(
-        "Timed out user ({user_name}, {user_display_name}) until {unmute_time}".format(
-            user_name=message.author.name,
-            user_display_name=message.author.display_name,
-            unmute_time=unmute_time.strftime("[UTC] %c")
-        ))
+        await target_user.timeout(mute_duration_as_delta, reason="Timed out via Gacha for {duration}.".format(
+            duration=mute_duration_display_str))
+        Ayumi.info(
+            "Timed out user ({user_name}, {user_display_name}) until {unmute_time}".format(
+                user_name=target_user.name,
+                user_display_name=target_user.display_name,
+                unmute_time=unmute_time.strftime("[UTC] %c")
+            ))
 
-    mute_messages = guild_settings.get("mute_messages", [DEFAULT_MUTE_MESSAGE])
-    mute_message_to_use = random.choice(mute_messages)
-    await message.reply(
-        mute_message_to_use.format(
-            muted_user_name=message.author.display_name,
-            mute_duration_display_str=mute_duration_display_str))
+        mute_messages = guild_settings.get("mute_messages_self", [DEFAULT_MUTE_MESSAGE_SELF]) \
+            if target_is_self else guild_settings.get("mute_messages_other", [DEFAULT_MUTE_MESSAGE_OTHER])
+        mute_message_to_use = random.choice(mute_messages)
+        await message.reply(
+            mute_message_to_use.format(
+                muted_user_name=target_user.display_name,
+                mute_duration_display_str=mute_duration_display_str))
 
 
 def main():
