@@ -12,7 +12,7 @@ from discord.ext.commands import Bot
 # TODO: Add support for Cogs/Extensions
 
 DEFAULT_SAFE_MESSAGE_SELF = "You have a safe role, so you won't be muted :)"
-DEFAULT_SAFE_MESSAGE_OTHER = "{muted_user_name} has a safe role, so they won't be muted :)"
+DEFAULT_SAFE_MESSAGE_OTHER = "{safe_user_name} has a safe role, so they won't be muted :)"
 DEFAULT_MUTE_MESSAGE_SELF = "Oh no, you've been muted for {mute_duration_display_str}!"
 DEFAULT_MUTE_MESSAGE_OTHER = "Oh no, {muted_user_name} has been muted for {mute_duration_display_str}!"
 DEFAULT_ADMIN_NO_ROLES_MESSAGE = "You do not have sufficient permissions to run this command."
@@ -24,6 +24,7 @@ bot = Bot("nana", intents=intents)
 # Optionally load the bot sharded, to support zero downtime.
 bot.shard_id = settings.get("bot_shard_id", None)
 bot.shard_count = settings.get("bot_shard_count", None)
+
 
 @bot.event
 async def on_ready():
@@ -139,12 +140,14 @@ async def on_message(message: Message):
 
     # Admin roles are implicitly also safe roles, so include them in the list.
     safe_roles.extend(admin_roles)
-    Ayumi.debug("Extended safe roles to include admin role IDs: {ids}".format(ids=", ".join([str(role) for role in admin_roles])))
+    Ayumi.debug("Extended safe roles to include admin role IDs: {ids}".format(
+        ids=", ".join([str(role) for role in admin_roles])))
 
     # Select the intended action target for this message.
     # If author has mentioned other users, they are the target. Otherwise, the target defaults to the author.
     # Note: `dict.fromkeys()` is used to remove duplicate tags.
-    target_users = tuple(dict.fromkeys(message.mentions or [message.author]))
+    target_users = list(dict.fromkeys(message.mentions or [message.author]))
+    target_users = target_users[:5]  # Trim to only support up to 5 tags at most currently.
 
     # Start processing an action for each target_user (either the message author, or all tagged in the message).
     for target_user in target_users:
@@ -168,8 +171,8 @@ async def on_message(message: Message):
                 if target_is_self else guild_settings.get("safe_messages_other", [DEFAULT_SAFE_MESSAGE_OTHER])
             safe_message_to_use = random.choice(safe_messages)
             await message.reply(safe_message_to_use.format(
-                    safe_user_name=target_user.display_name,
-                    mute_duration_display_str=mute_duration_display_str))
+                safe_user_name=target_user.display_name,
+                mute_duration_display_str=mute_duration_display_str))
             continue
 
         # Calculate the time that the user will be unblocked.
@@ -181,7 +184,8 @@ async def on_message(message: Message):
         # TODO: Temporary block due to the Discord timeout being limited to 28 days.
         if mute_duration_as_delta > timedelta(days=28):
             mute_duration_as_delta = timedelta(days=28)
-            Ayumi.warning("WARNING: Generated a mute time above 28 days, trimming to 28 days. Check your configuration!")
+            Ayumi.warning(
+                "WARNING: Generated a mute time above 28 days, trimming to 28 days. Check your configuration!")
 
         unmute_time = current_time + mute_duration_as_delta
         Ayumi.debug("The user will be unmuted at: {unmute_time}".format(unmute_time=unmute_time.strftime("[UTC] %c")))
