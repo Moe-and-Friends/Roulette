@@ -22,14 +22,26 @@ triggers = ["<list_of_words>"] # Words will be searched for in the message conte
 # Supported Tags:
 # {muted_user_name}
 # {mute_duration_display_str}
-# These messages are randomly selected by the bot to respond.
-mute_messages = ["<list_of_messages>"]
+# These messages are randomly selected by the bot to respond to if the user is rolling for themselves.
+mute_messages_self = ["<list_of_messages>"]
+
+# Supported Tags:
+# {muted_user_name}
+# {mute_duration_display_str}
+# These messages are randomly selected by the bot to respond if the user is rolling for others.
+muted_messages_other = ["<list_of_message>"]
 
 # Supported Tags:
 # {safe_user_name}
 # {mute_duration_display_str}
-# These messages are randomly selected by the bot to respond.
-safe_messages = ["<list_of_messages>"]
+# These messages are randomly selected by the bot to respond if the user is rolling for themselves.
+safe_messages_self = ["<list_of_messages>"]
+
+# Supported Tags:
+# {safe_user_name}
+# {mute_duration_display_str}
+# These messages are randomly selected by the bot to respond if the user is rolling for others.
+safe_messages_other = ["<list_of_messages>"]
 
 # Supported Tags:
 # {author_name}

@@ -11,8 +11,10 @@ from discord.ext.commands import Bot
 
 # TODO: Add support for Cogs/Extensions
 
-DEFAULT_SAFE_MESSAGE = "You have a safe role, so you won't be muted :)"
-DEFAULT_MUTE_MESSAGE = "Oh no, you've been muted for {mute_duration_display_str}!"
+DEFAULT_SAFE_MESSAGE_SELF = "You have a safe role, so you won't be muted :)"
+DEFAULT_SAFE_MESSAGE_OTHER = "{muted_user_name} has a safe role, so they won't be muted :)"
+DEFAULT_MUTE_MESSAGE_SELF = "Oh no, you've been muted for {mute_duration_display_str}!"
+DEFAULT_MUTE_MESSAGE_OTHER = "Oh no, {muted_user_name} has been muted for {mute_duration_display_str}!"
 DEFAULT_ADMIN_NO_ROLES_MESSAGE = "You do not have sufficient permissions to run this command."
 
 intents = Intents.default()
@@ -153,13 +155,17 @@ async def on_message(message: Message):
                 mute_time=mute_duration_display_str,
                 mute_time_in_minutes=mute_duration))
 
+        target_is_self = (target_user == message.author)
+        Ayumi.debug(f"Target for mute is self: {target_is_self}")
+
         # TODO: Log which role on the author is safe.
         if not set([role.id for role in target_user.roles]).isdisjoint(safe_roles):
-            Ayumi.info("Message {message_id} from user {author_name} has a safe role, ignoring.".format(
+            Ayumi.info("Message {message_id} for user {author_name} has a safe role, ignoring.".format(
                 message_id=message.id,
                 author_name=target_user.name))
 
-            safe_messages = guild_settings.get("safe_messages", [DEFAULT_SAFE_MESSAGE])
+            safe_messages = guild_settings.get("safe_messages_self", [DEFAULT_SAFE_MESSAGE_SELF]) \
+                if target_is_self else guild_settings.get("safe_messages_other", [DEFAULT_SAFE_MESSAGE_OTHER])
             safe_message_to_use = random.choice(safe_messages)
             await message.reply(safe_message_to_use.format(
                     safe_user_name=target_user.display_name,
@@ -189,7 +195,8 @@ async def on_message(message: Message):
                 unmute_time=unmute_time.strftime("[UTC] %c")
             ))
 
-        mute_messages = guild_settings.get("mute_messages", [DEFAULT_MUTE_MESSAGE])
+        mute_messages = guild_settings.get("mute_messages_self", [DEFAULT_MUTE_MESSAGE_SELF]) \
+            if target_is_self else guild_settings.get("mute_messages_other", [DEFAULT_MUTE_MESSAGE_OTHER])
         mute_message_to_use = random.choice(mute_messages)
         await message.reply(
             mute_message_to_use.format(
