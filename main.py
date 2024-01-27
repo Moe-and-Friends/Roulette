@@ -147,6 +147,12 @@ async def on_message(message: Message):
     # If author has mentioned other users, they are the target. Otherwise, the target defaults to the author.
     # Note: `dict.fromkeys()` is used to remove duplicate tags.
     target_users = list(dict.fromkeys(message.mentions or [message.author]))
+
+    # Special case, target_users also should ignore if the bot is targeting itself.
+    if bot.user in target_users:
+        Ayumi.warning("Message mentions include this bot, removing.")
+        target_users.remove(bot.user)
+
     target_users = target_users[:5]  # Trim to only support up to 5 tags at most currently.
 
     # Start processing an action for each target_user (either the message author, or all tagged in the message).
