@@ -36,6 +36,8 @@ _RESPONSE_SCHEMA = {
     }
 }
 
+_WHISK_AUTH_TOKEN_HEADER = "X-Require-Whisk-Auth"
+
 _validator = Validator(_RESPONSE_SCHEMA, allow_unknown=True, require_all=True)
 
 def generate_mute_time() -> int:
@@ -49,15 +51,18 @@ def generate_mute_time() -> int:
     if not url:
         raise ValueError("DigitalOcean Function interval module is active, but no URL is set.")
 
-    # TODO: Add header support
     # TODO: Add timeout support
 
-    res = requests.get(url)
+    headers = dict()
+    if auth_token := interval_settings.get("auth_token"):
+        Ayumi.debug("DigitalOcean Function auth token exists, added to headers.")
+        headers[_WHISK_AUTH_TOKEN_HEADER] = auth_token
+
+    res = requests.get(url, headers=headers)
     if res.status_code != 200:
-        Ayumi.warning("Received status code from DigitalOcean Function: {code}".format(
+        raise RuntimeError("DigitalOcean Function returned code {code}.".format(
             code=str(res.status_code)
         ))
-        raise RuntimeError("DigitalOcean Function did not return a code 200.")
 
     res_data = res.json()
 

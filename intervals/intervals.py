@@ -18,7 +18,7 @@ def generate_mute_time() -> int:
         Ayumi.debug("Trying to load an interval from DigitalOcean Function.")
         try:
             return digital_ocean_function.generate_mute_time()
-        except ValueError as e:
+        except (RuntimeError, ValueError) as e:
             Ayumi.critical("DigitalOcean Function encountered an error: {}".format(e))
 
     # Local settings is guaranteed to return a value.
