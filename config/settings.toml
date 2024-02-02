@@ -49,6 +49,26 @@ safe_messages_other = ["<list_of_messages>"]
 # These messages are used by the bot to warn non-admin users who attempt to run a command that requires admin roles.
 admin_no_role_messages = ["<list_of_messages>"]
 
+# Intervals can be set using a variety of different modules. The first available one, in the order below, will be used:
+# 1. DigitalOcean Function
+# 2. Local Settings
+
+# DigitalOcean Function Settings
+# Make a request to a DigitalOcean Function (or same interface) and read the data back.
+[default.intervals.digitalocean.function]
+# Enables/disables this interval module. Must be explicitly set to `true` for this module to be used.
+enabled = false
+# The URL the function is hosted at. Include the full URL.
+# Required.
+url = "https://faas-<region>-<id>.doserverless.co/api/v1/web/fn-<fn_id>/your/function/path"
+# For Secure Web Functions.
+# Optional.
+auth_token = "<whisk_auth_token>"
+# Timeout before failing the request and moving to the next available module.
+# Optional.
+timeout = 0
+
+# Local Settings
 # List of Mute intervals
 # Bounds are inclusive (bound.lower, bound.upper)
 # Weight: Non-cumulative weight for each interval.
