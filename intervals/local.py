@@ -22,7 +22,7 @@ def generate_mute_time() -> int:
 
     if not intervals:
         intervals = [_DEFAULT_INTERVAL]
-        Ayumi.warning("No local interval settings were set or found. Using default fallback!")
+        Ayumi.warning("No local interval settings were set or found - using default fallback.")
 
     # First, select an interval to load
     # Create the bounds tuples and their respective weights
