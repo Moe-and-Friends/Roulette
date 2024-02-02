@@ -65,8 +65,9 @@ url = "https://faas-<region>-<id>.doserverless.co/api/v1/web/fn-<fn_id>/your/fun
 # Optional.
 auth_token = "<whisk_auth_token>"
 # Timeout before failing the request and moving to the next available module.
+# Must be set to a value greater than 0.
 # Optional.
-timeout = 0
+timeout = 1
 
 # Local Settings
 # List of Mute intervals

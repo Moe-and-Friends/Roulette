@@ -51,14 +51,20 @@ def generate_mute_time() -> int:
     if not url:
         raise ValueError("DigitalOcean Function interval module is active, but no URL is set.")
 
-    # TODO: Add timeout support
-
     headers = dict()
     if auth_token := interval_settings.get("auth_token"):
         Ayumi.debug("DigitalOcean Function auth token exists, added to headers.")
         headers[_WHISK_AUTH_TOKEN_HEADER] = auth_token
 
-    res = requests.get(url, headers=headers)
+    # Explicitly default to `None` to signify there is no timeout by default.
+    timeout = interval_settings.get("timeout", None)
+    Ayumi.debug("DigitalOcean Function request timeout set to: {timeout}".format(
+        timeout=str(timeout)
+    ))
+
+    # If the request times out, it should be caught by the parent module.
+    res = requests.get(url, headers=headers, timeout=timeout)
+
     if res.status_code != 200:
         raise RuntimeError("DigitalOcean Function returned code {code}.".format(
             code=str(res.status_code)

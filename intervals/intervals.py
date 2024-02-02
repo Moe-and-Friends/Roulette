@@ -2,6 +2,7 @@ import sys
 
 from ayumi import Ayumi
 from config import settings
+from requests.exceptions import Timeout as RequestTimeout
 
 from . import digital_ocean_function, local
 
@@ -18,7 +19,7 @@ def generate_mute_time() -> int:
         Ayumi.debug("Trying to load an interval from DigitalOcean Function.")
         try:
             return digital_ocean_function.generate_mute_time()
-        except (RuntimeError, ValueError) as e:
+        except (RequestTimeout, RuntimeError, ValueError) as e:
             Ayumi.critical("DigitalOcean Function encountered an error: {}".format(e))
 
     # Local settings is guaranteed to return a value.
