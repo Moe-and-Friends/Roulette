@@ -54,6 +54,9 @@ def generate_mute_time() -> int:
 
     res = requests.get(url)
     if res.status_code != 200:
+        Ayumi.warning("Received status code from DigitalOcean Function: {code}".format(
+            code=str(res.status_code)
+        ))
         raise RuntimeError("DigitalOcean Function did not return a code 200.")
 
     res_data = res.json()
@@ -63,4 +66,7 @@ def generate_mute_time() -> int:
         raise ValueError("DigitalOcean Function did not return a valid response.")
 
     # Values are guaranteed to exist by Cerberus.
+    Ayumi.debug("Received a mute time of {duration} from the function.".format(
+        duration=res_data['action']['timeout']['duration_display_str']
+    ))
     return res_data['action']['timeout']['duration_mins']
