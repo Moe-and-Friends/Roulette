@@ -4,11 +4,25 @@ from ayumi import Ayumi
 from config import settings
 from .time_display_converter import convert_interval_str_to_minutes, convert_minutes_to_display_str
 
+# A default interval to fall back to, if the user has not set any.
+_DEFAULT_INTERVAL = {
+    "bound": {
+        "lower": "1m",
+        "upper": "5m"
+    },
+    "weight": 100
+}
+
 
 def generate_mute_time() -> int:
     # Load the list of intervals used to determine mutes.
-    intervals = settings.get("intervals")
+    interval_settings = settings.get("intervals") or dict()
+    intervals = interval_settings.get("local", list())
     Ayumi.debug("Loaded {count} intervals.".format(count=int(len(intervals))))
+
+    if not intervals:
+        intervals = [_DEFAULT_INTERVAL]
+        Ayumi.warning("No local interval settings were set or found. Using default fallback!")
 
     # First, select an interval to load
     # Create the bounds tuples and their respective weights

@@ -54,6 +54,6 @@ admin_no_role_messages = ["<list_of_messages>"]
 # Weight: Non-cumulative weight for each interval.
 # Supported suffixes: m, h, d, w
 # Repeat another [[<STAGE>.intervals]] to add a new interval.
-[[default.intervals]]
+[[default.intervals.local]]
 bound = { "lower" = "1m", "upper" = "5m"}
 weight = 100
