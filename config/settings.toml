@@ -59,6 +59,21 @@ admin_no_role_messages = ["<list_of_messages>"]
 # Enables/disables this interval module. Must be explicitly set to `true` for this module to be used.
 enabled = false
 # The URL the function is hosted at. Include the full URL.
+# The request will be made argumentless and bodyless.
+# Expected request return format example:
+# {
+#     "action": {
+#         "timeout": {
+#             "duration_display_str": "43 minutes" # str
+#             "duration_mins": 43 # uint, > 0
+#             "lower_bound_display_str": "1m" # str
+#             "lower_bound_mins": 1 # uint, > 0
+#             "upper_bound_display_str": "1h" # str
+#             "upper_bound_mins": 60 # uint, > 0
+#         }
+#         "type": "TIMEOUT" # Possible values: ["TIMEOUT"]
+#     }
+# }
 # Required.
 url = "https://faas-<region>-<id>.doserverless.co/api/v1/web/fn-<fn_id>/your/function/path"
 # For Secure Web Functions.
