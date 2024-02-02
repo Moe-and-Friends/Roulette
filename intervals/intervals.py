@@ -11,8 +11,10 @@ if not all_interval_settings:
     Ayumi.critical("Interval settings are missing. Please check your configuration, now exiting.")
     sys.exit(1)
 
-_DIGITALOCEAN_FUNCTION_ENABLED = all_interval_settings.get("digitalocean", dict()).get("function", dict()).get("enabled", False)
+_DIGITALOCEAN_FUNCTION_ENABLED = all_interval_settings.get("digitalocean", dict()).get("function", dict()).get(
+    "enabled", False)
 Ayumi.info("DigitalOcean Function Enabled: {}".format(str(_DIGITALOCEAN_FUNCTION_ENABLED)))
+
 
 def generate_mute_time() -> int:
     if (_DIGITALOCEAN_FUNCTION_ENABLED):

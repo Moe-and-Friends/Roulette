@@ -1,8 +1,6 @@
 import random
 import sys
 
-import requests
-
 from ayumi import Ayumi
 from config import settings
 from datetime import datetime, timedelta, timezone

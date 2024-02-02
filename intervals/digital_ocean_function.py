@@ -40,6 +40,7 @@ _WHISK_AUTH_TOKEN_HEADER = "X-Require-Whisk-Auth"
 
 _validator = Validator(_RESPONSE_SCHEMA, allow_unknown=True, require_all=True)
 
+
 def generate_mute_time() -> int:
     # Load parent settings
     all_interval_settings = settings.get("intervals") or dict()
