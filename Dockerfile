@@ -9,5 +9,7 @@ COPY requirements.txt /opt/requirements.txt
 RUN pip install -r /opt/requirements.txt && rm /opt/requirements.txt
 
 COPY *.py /roulette/
+COPY intervals/*.py /roulette/intervals/
+
 WORKDIR /roulette
 ENTRYPOINT ["python3", "main.py"]
